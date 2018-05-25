@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Helmsman</string>
+    <string name="btn_setting">系统设置</string>
+    <string name="btn_device">连接设备</string>
+    <string name="state_not_connect">蓝牙未连接！</string>
+    <string name="btn_positive">确定</string>
+    <string name="btn_negative">取消</string>
+    <string name="dialog_device_title">设备列表</string>
+    <string name="dialog_device_searching">正在搜索设备</string>
+</resources>

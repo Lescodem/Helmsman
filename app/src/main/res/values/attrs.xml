@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ControlView">
+        <attr name="direction" format="enum">
+            <enum name="left" value="0"/>
+            <enum name="right" value="1"/>
+        </attr>
+        <attr name="infoColor" format="color"/>
+        <attr name="infoSize" format="dimension"/>
+        <attr name="sectorColor" format="color"/>
+        <attr name="sectorLightColor" format="color"/>
+    </declare-styleable>
+</resources>
