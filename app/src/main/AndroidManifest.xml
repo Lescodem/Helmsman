@@ -24,7 +24,7 @@
         </activity>
 
         <service
-            android:name=".ClientService"
+            android:name=".BleService"
             android:enabled="true"
             android:exported="false"/>
 
