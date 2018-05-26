@@ -20,6 +20,11 @@ public class ControlView extends View {
 
     private static final String TAG = "ControlView";
 
+
+    public interface ProgressListener {
+        void onChange(float p);
+    }
+
     private static final int DIRECTION_LEFT = 0;
     private static final int DIRECTION_RIGHT = 1;
 
@@ -51,6 +56,8 @@ public class ControlView extends View {
     @Direction
     private int direction;
 
+    private ProgressListener progressListener;
+
     public ControlView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
 
@@ -74,6 +81,10 @@ public class ControlView extends View {
         initSectorState();
 
         typedArray.recycle();
+    }
+
+    public void setProgressListener(ProgressListener listener) {
+        progressListener = listener;
     }
 
     @Override
@@ -204,6 +215,9 @@ public class ControlView extends View {
         int level = Math.abs(middle - sectorIndex);
         int ratio = (int) ((float) level / middle * 100);
         sectorInfo = ratio + "%";
+        if (progressListener != null) {
+            progressListener.onChange((float) sectorIndex / NUM_SECTOR);
+        }
     }
 
 }

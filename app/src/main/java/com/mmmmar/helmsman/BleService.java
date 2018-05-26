@@ -7,10 +7,11 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.IntDef;
 import android.util.Log;
+
+import java.util.Arrays;
 
 public class BleService extends Service {
 
@@ -21,16 +22,16 @@ public class BleService extends Service {
     public static final int STATE_CONNECTED = 2;
 
     @IntDef({STATE_CONNECTED, STATE_CONNECTING, STATE_UNCONNECTED})
-    public  @interface ServiceState {}
-
-    private Op op = new Op();
-    private BleGattCallback gattCallback = new BleGattCallback();
-    private BluetoothGatt gattService;
+    public @interface ServiceState {}
 
     @ServiceState
     private int serviceState = STATE_UNCONNECTED;
 
-    private Handler handler = new Handler();
+    private Op op = new Op();
+    private BluetoothGattCallback gattCallback = new BleGattCbSynWrapper(new BleGattCallback());
+    private BluetoothGatt gattService;
+
+    private BleTalker bleTalker = new BleTalker();
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -49,10 +50,6 @@ public class BleService extends Service {
 
         private StateListener stateListener;
 
-        public StateListener getStateListener() {
-            return stateListener;
-        }
-
         public void setStateListener(StateListener stateListener) {
             this.stateListener = stateListener;
         }
@@ -66,11 +63,19 @@ public class BleService extends Service {
         }
 
         public void disconnect() {
-            gattService.disconnect();
+            if (serviceState == STATE_CONNECTED) {
+                gattService.disconnect();
+            }
         }
 
         public void send(byte[] data) {
+            if (serviceState == STATE_CONNECTED) {
+                bleTalker.send(gattService, data);
+            }
+        }
 
+        public @ServiceState int getState() {
+            return serviceState;
         }
     }
 
@@ -78,29 +83,19 @@ public class BleService extends Service {
 
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            Log.d(TAG, "onConnectionStateChange -> (" + status + ", " + newState + ")");
             if (newState == BluetoothGatt.STATE_CONNECTED) {
                 gatt.discoverServices();
             } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
-                handler.post(() -> {
-                    if (status == BluetoothGatt.GATT_SUCCESS) {
-                        serviceState = STATE_UNCONNECTED;
-                        op.stateListener.onServerDisconnect();
-                    } else {
-                        op.stateListener.onServerError(getString(R.string.msg_disconnect));
-                    }
-                });
+                serviceState = STATE_UNCONNECTED;
+                op.stateListener.onServerDisconnect();
             }
         }
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            Log.d(TAG, "onServicesDiscovered -> (" + status + ")");
-            if (status == BluetoothGatt.GATT_SUCCESS && TargetToy.isServiceAccept(gatt)) {
-                handler.post(() -> {
-                    serviceState = STATE_CONNECTED;
-                    op.stateListener.onServerConnect();
-                });
+            if (status == BluetoothGatt.GATT_SUCCESS && BleTalker.isServiceAccept(gatt)) {
+                serviceState = STATE_CONNECTED;
+                op.stateListener.onServerConnect();
             } else {
                 gatt.disconnect();
             }
@@ -108,10 +103,7 @@ public class BleService extends Service {
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-
+            bleTalker.next(gatt);
         }
     }
-
-
-
 }

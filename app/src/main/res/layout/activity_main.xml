@@ -99,21 +99,21 @@
     </LinearLayout>
 
     <com.mmmmar.helmsman.ControlView
+        android:id="@+id/ctl_left"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         app:direction="left"
         app:sectorColor="@color/colorPrimary"
         app:sectorLightColor="@color/colorPrimaryDark" />
 
     <com.mmmmar.helmsman.ControlView
+        android:id="@+id/ctl_right"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
         app:direction="right"
         app:sectorColor="@color/colorPrimary"
         app:sectorLightColor="@color/colorPrimaryDark" />

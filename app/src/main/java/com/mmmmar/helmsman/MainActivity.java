@@ -39,18 +39,19 @@ public class MainActivity extends AppCompatActivity {
 
     private DeviceDialog deviceDialog;
 
-    @BleService.ServiceState
-    private int bleState = BleService.STATE_UNCONNECTED;
     private BleService.Op bleOp;
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             bleOp = (BleService.Op) service;
             bleOp.setStateListener(new BleStateListener());
+            toyLogic.setCommandConsumer(bleOp::send);
         }
         @Override
         public void onServiceDisconnected(ComponentName name) {}
     };
+
+    private ToyLogic toyLogic = new ToyLogic();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +68,11 @@ public class MainActivity extends AppCompatActivity {
 
         tv_log1 = findViewById(R.id.tv_log1);
         tv_log2 = findViewById(R.id.tv_log2);
+
+        ControlView cl_left = findViewById(R.id.ctl_left);
+        ControlView cl_right = findViewById(R.id.ctl_right);
+        cl_left.setProgressListener(toyLogic::handleLeft);
+        cl_right.setProgressListener(toyLogic::handleRight);
 
         if (savedInstanceState  != null) {
             tv_log1.setText(savedInstanceState.getString(BUNDLE_LOG1));
@@ -92,10 +98,10 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         Log.d(TAG, "save instance, log1 : " + tv_log1.getText().toString()
                 + ", log2 : " + tv_log2.getText().toString()
-                + ", state : " + bleState);
+                + ", state : " + bleOp.getState());
         outState.putString(BUNDLE_LOG1, tv_log1.getText().toString());
         outState.putString(BUNDLE_LOG2, tv_log2.getText().toString());
-        outState.putInt(BUNDLE_STATE, bleState);
+        outState.putInt(BUNDLE_STATE, bleOp.getState());
     }
 
     @Override
@@ -183,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void switchDeviceBtn(@BleService.ServiceState int state) {
-        bleState = state;
         switch (state) {
             case BleService.STATE_UNCONNECTED:
                 btn_device.setEnabled(true);
