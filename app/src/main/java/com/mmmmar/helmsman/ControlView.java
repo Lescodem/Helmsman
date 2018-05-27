@@ -9,6 +9,7 @@ import android.graphics.Point;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -39,14 +40,14 @@ public class ControlView extends View {
     private static final int COLOR_SECTOR_LIGHT_DEFAULT = 0XFFEE7806;
 
     private static final int NUM_SECTOR = 11;
-    private static final float ANGLE_MARGIN = 1;
+    private static final float ANGLE_MARGIN = 0;
     private static final float ANGLE_SECTOR = (90.0f - (ANGLE_MARGIN * (NUM_SECTOR - 1))) / NUM_SECTOR;
 
     private Paint sectorPaint = new Paint();
 
     private SectorElement[] sectorArray = new SectorElement[NUM_SECTOR];
-    private Point sectorCenter = new Point();
     private int sectorIndex = sectorArray.length / 2;
+    private Point sectorCenter = new Point();
 
     private String sectorInfo = "0%";
     private Point sectorInfoPoint = new Point();
@@ -178,21 +179,29 @@ public class ControlView extends View {
             }
         }
         if (!accept) {
+            // 触点不在上半部分，在下半部分查找。
             for (int i = sectorArray.length - 1; i >= posMiddle; --i) {
                 SectorElement element = sectorArray[i];
                 if (element.accept(event.getX(), event.getY()) || accept) {
+                    element.mark(true);
                     // 触点所在的扇区变化时重绘视图。
                     if (i != sectorIndex && !accept) {
                         sectorIndex = i;
                         calcSectorInfo();
                         invalidate();
                     }
-                    element.mark(true);
                     accept = true;
                 } else {
                     element.mark(false);
                 }
             }
+        } else {
+            // 触点在上半部分，将下半部分标记为空闲状态。
+            // for (int i = sectorArray.length - 1; i > posMiddle; --i) {
+            //     sectorArray[i].mark(false);
+            // }
+            // 实际仅需要重新标记下半部分第一个扇区。
+            sectorArray[posMiddle + 1].mark(false);
         }
         return true;
     }

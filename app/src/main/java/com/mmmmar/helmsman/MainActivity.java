@@ -96,12 +96,19 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
+        int serviceState;
+        // 在开发时出现空指针情况，是Instant Run的问题？
+        if (bleOp == null) {
+            serviceState = BleService.STATE_UNCONNECTED;
+        } else {
+            serviceState = bleOp.getState();
+        }
         Log.d(TAG, "save instance, log1 : " + tv_log1.getText().toString()
                 + ", log2 : " + tv_log2.getText().toString()
-                + ", state : " + bleOp.getState());
+                + ", state : " + serviceState);
         outState.putString(BUNDLE_LOG1, tv_log1.getText().toString());
         outState.putString(BUNDLE_LOG2, tv_log2.getText().toString());
-        outState.putInt(BUNDLE_STATE, bleOp.getState());
+        outState.putInt(BUNDLE_STATE, serviceState);
     }
 
     @Override

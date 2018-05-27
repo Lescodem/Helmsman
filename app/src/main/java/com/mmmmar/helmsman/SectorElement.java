@@ -13,6 +13,7 @@ public class SectorElement {
     private static final int MARGIN_SEC = 30;
 
     private static final float RATIO_TOUCH = 0.5f;
+    private static final float ANGLE_PADDING = 0.4f;
 
     private int colorDark;
     private int colorLight;
@@ -41,9 +42,9 @@ public class SectorElement {
         outerSector.reset();
         innerSector.reset();
 
-        makeSectorPath(outerSector, startAngle, endAngle, radius - RADIUS_OUTER_SEC, radius, center);
+        makeSectorPath(outerSector, startAngle + ANGLE_PADDING,  endAngle - ANGLE_PADDING, radius - RADIUS_OUTER_SEC, radius, center);
         int innerSectorOuter = radius - RADIUS_OUTER_SEC - MARGIN_SEC;
-        makeSectorPath(innerSector, startAngle, endAngle, innerSectorOuter - RADIUS_INNER_SEC , innerSectorOuter, center);
+        makeSectorPath(innerSector, startAngle + ANGLE_PADDING, endAngle - ANGLE_PADDING, innerSectorOuter - RADIUS_INNER_SEC , innerSectorOuter, center);
     }
 
     public void draw(Canvas canvas, Paint paint) {
