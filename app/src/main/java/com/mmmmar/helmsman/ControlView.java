@@ -71,7 +71,8 @@ public class ControlView extends View {
 
         // 字体配置。
         infoPaint.setColor(typedArray.getColor(R.styleable.ControlView_infoColor, COLOR_TEXT_DEFAULT));
-        infoPaint.setTextSize(typedArray.getDimensionPixelSize(R.styleable.ControlView_infoSize, DensityUtil.sp2px(context, SIZE_TEXT_DEFAULT)));
+        infoPaint.setTextSize(typedArray.getDimensionPixelSize(R.styleable.ControlView_infoSize,
+                DensityUtil.sp2px(context, SIZE_TEXT_DEFAULT)));
         // 扇区颜色。
         int colorDark = typedArray.getColor(R.styleable.ControlView_sectorColor, COLOR_SECTOR_DEFAULT);
         int colorLight = typedArray.getColor(R.styleable.ControlView_sectorLightColor, COLOR_SECTOR_LIGHT_DEFAULT);
@@ -137,7 +138,8 @@ public class ControlView extends View {
         }
 
         float infoWidth = infoPaint.measureText(sectorInfo);
-        canvas.drawText(sectorInfo, sectorInfoPoint.x - infoWidth / 2, sectorInfoPoint.y + SIZE_TEXT_DEFAULT / 2, infoPaint);
+        canvas.drawText(sectorInfo, sectorInfoPoint.x - infoWidth / 2,
+                sectorInfoPoint.y + SIZE_TEXT_DEFAULT / 2, infoPaint);
     }
 
     @SuppressLint("ClickableViewAccessibility")
