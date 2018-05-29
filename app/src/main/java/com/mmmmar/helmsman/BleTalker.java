@@ -44,14 +44,14 @@ public class BleTalker {
     }
 
     public void next(BluetoothGatt gatt) {
+        BluetoothGattCharacteristic characteristic = getCharacteristic(gatt);
+        if (characteristic == null) {
+            Log.e(TAG, "next: can't find characteristic");
+            return;
+        }
         byte[] data = dataQueue.poll();
         if (data == null) {
             dataWriting = false;
-            return;
-        }
-        BluetoothGattCharacteristic characteristic = getCharacteristic(gatt);
-        if (characteristic == null) {
-            Log.e(TAG, "send: can't find characteristic");
             return;
         }
         characteristic.setValue(data);
