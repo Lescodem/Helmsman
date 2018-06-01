@@ -9,9 +9,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.IntDef;
-import android.util.Log;
-
-import java.util.Arrays;
 
 public class BleService extends Service {
 
@@ -27,38 +24,38 @@ public class BleService extends Service {
     @ServiceState
     private int serviceState = STATE_UNCONNECTED;
 
-    private Op op = new Op();
+    private Impl impl = new Impl();
+
     private BluetoothGattCallback gattCallback = new BleGattCbSynWrapper(new BleGattCallback());
     private BluetoothGatt gattService;
 
-    private BleTalker bleTalker = new BleTalker();
+    private BleTalker bleTalker;
 
     @Override
     public IBinder onBind(Intent intent) {
-        return op;
+        return impl;
     }
 
-    public interface StateListener {
+    public interface BleListener {
         void onServerConnect();
         void onServerConnecting();
         void onServerDisconnect();
         void onServerError(String msg);
-        void onServerReply(byte[] data);
     }
 
-    public class Op extends Binder {
+    public class Impl extends Binder {
 
-        private StateListener stateListener;
+        private BleListener bleListener;
 
-        public void setStateListener(StateListener stateListener) {
-            this.stateListener = stateListener;
+        public void setBleListener(BleListener bleListener) {
+            this.bleListener = bleListener;
         }
 
         public void connect(BluetoothDevice device) {
             if (serviceState == STATE_UNCONNECTED) {
                 serviceState = STATE_CONNECTING;
+                impl.bleListener.onServerConnecting();
                 gattService = device.connectGatt(BleService.this, true, gattCallback);
-                op.stateListener.onServerConnecting();
             }
         }
 
@@ -83,27 +80,37 @@ public class BleService extends Service {
 
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+            // TODO: 2018/6/1 对status参数不了解，暂时不使用。
             if (newState == BluetoothGatt.STATE_CONNECTED) {
                 gatt.discoverServices();
             } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
                 serviceState = STATE_UNCONNECTED;
-                op.stateListener.onServerDisconnect();
+                impl.bleListener.onServerDisconnect();
             }
         }
 
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            if (status == BluetoothGatt.GATT_SUCCESS && BleTalker.isServiceAccept(gatt)) {
+            // ignore "status".
+            bleTalker = createBleTalker();
+            if (bleTalker.isValid(gatt)) {
                 serviceState = STATE_CONNECTED;
-                op.stateListener.onServerConnect();
+                impl.bleListener.onServerConnect();
             } else {
+                impl.bleListener.onServerError(getString(R.string.err_device_irrelevant));
                 gatt.disconnect();
             }
         }
 
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            // ignore "status".
             bleTalker.next(gatt);
         }
+    }
+
+    private BleTalker createBleTalker() {
+        SettingManager manager = SettingManager.getInstance(this);
+        return new BleTalker(manager.getServiceValue(), manager.getCharacteristicValue());
     }
 }

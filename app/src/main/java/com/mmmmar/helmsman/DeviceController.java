@@ -4,9 +4,9 @@ import android.util.Log;
 
 import java.util.Arrays;
 
-public class ToyLogic {
+public class DeviceController {
 
-    private static final String TAG = "ToyLogic";
+    private static final String TAG = "DeviceController";
 
     private static final int NUM_LEVEL = 11;
     private static final int LEVEL_DEFAULT = NUM_LEVEL / 2;
@@ -81,6 +81,5 @@ public class ToyLogic {
     public interface CommandConsumer {
         void onCommand(byte[] data);
     }
-
 
 }

@@ -9,20 +9,19 @@ import android.graphics.Point;
 import android.support.annotation.IntDef;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.security.InvalidParameterException;
 
 
 public class ControlView extends View {
 
     private static final String TAG = "ControlView";
 
-
-    public interface ProgressListener {
+    public interface ProgressChangeListener {
         void onChange(float p);
     }
 
@@ -43,49 +42,47 @@ public class ControlView extends View {
     private static final float ANGLE_MARGIN = 0;
     private static final float ANGLE_SECTOR = (90.0f - (ANGLE_MARGIN * (NUM_SECTOR - 1))) / NUM_SECTOR;
 
-    private Paint sectorPaint = new Paint();
+    private ControlElement[] elementArray = new ControlElement[NUM_SECTOR];
+    private int elementIndex = elementArray.length / 2;
+    private Point elementCenter = new Point();
+    private Paint elementPaint = new Paint();
 
-    private SectorElement[] sectorArray = new SectorElement[NUM_SECTOR];
-    private int sectorIndex = sectorArray.length / 2;
-    private Point sectorCenter = new Point();
-
-    private String sectorInfo = "0%";
-    private Point sectorInfoPoint = new Point();
-
-    private Paint infoPaint = new Paint();
+    private String elementInfo = "0%";
+    private Point elementInfoPoint = new Point();
+    private Paint elementInfoPaint = new Paint();
 
     @Direction
     private int direction;
 
-    private ProgressListener progressListener;
+    private ProgressChangeListener progressListener;
 
     public ControlView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
 
-        initPaint(sectorPaint);
-        initPaint(infoPaint);
+        initPaint(elementPaint);
+        initPaint(elementInfoPaint);
 
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.ControlView);
         // 控件方向。
         direction = typedArray.getInt(R.styleable.ControlView_direction, DIRECTION_LEFT);
 
         // 字体配置。
-        infoPaint.setColor(typedArray.getColor(R.styleable.ControlView_infoColor, COLOR_TEXT_DEFAULT));
-        infoPaint.setTextSize(typedArray.getDimensionPixelSize(R.styleable.ControlView_infoSize,
+        elementInfoPaint.setColor(typedArray.getColor(R.styleable.ControlView_infoColor, COLOR_TEXT_DEFAULT));
+        elementInfoPaint.setTextSize(typedArray.getDimensionPixelSize(R.styleable.ControlView_infoSize,
                 DensityUtil.sp2px(context, SIZE_TEXT_DEFAULT)));
         // 扇区颜色。
         int colorDark = typedArray.getColor(R.styleable.ControlView_sectorColor, COLOR_SECTOR_DEFAULT);
         int colorLight = typedArray.getColor(R.styleable.ControlView_sectorLightColor, COLOR_SECTOR_LIGHT_DEFAULT);
         // 初始化扇区。
-        for (int i = 0; i < sectorArray.length; ++i) {
-            sectorArray[i] = new SectorElement(colorDark, colorLight);
+        for (int i = 0; i < elementArray.length; ++i) {
+            elementArray[i] = new ControlElement(colorDark, colorLight);
         }
         initSectorState();
 
         typedArray.recycle();
     }
 
-    public void setProgressListener(ProgressListener listener) {
+    public void setProgressListener(ProgressChangeListener listener) {
         progressListener = listener;
     }
 
@@ -101,31 +98,31 @@ public class ControlView extends View {
 
         if (direction == DIRECTION_LEFT) {
             // 中心点坐标。
-            sectorCenter.x = 0;
-            sectorCenter.y = getHeight();
+            elementCenter.x = 0;
+            elementCenter.y = getHeight();
             // 信息坐标。
-            sectorInfoPoint.x = getWidth() / 4;
-            sectorInfoPoint.y = getHeight() - getHeight() / 4;
+            elementInfoPoint.x = getWidth() / 4;
+            elementInfoPoint.y = getHeight() - getHeight() / 4;
             // 起始扇区角度值。
             float angle = 270;
-            for (SectorElement aSectorArray : sectorArray) {
-                aSectorArray.setPath(angle, ANGLE_SECTOR, getHeight(), sectorCenter);
+            for (ControlElement aSectorArray : elementArray) {
+                aSectorArray.setPath(angle, ANGLE_SECTOR, getHeight(), elementCenter);
                 angle = angle + ANGLE_SECTOR + ANGLE_MARGIN;
             }
         } else if (direction == DIRECTION_RIGHT) {
             // 中心点坐标。
-            sectorCenter.x = getWidth();
-            sectorCenter.y = getHeight();
+            elementCenter.x = getWidth();
+            elementCenter.y = getHeight();
             // 信息坐标。
-            sectorInfoPoint.x = getWidth() - getWidth() / 4;
-            sectorInfoPoint.y = getHeight() - getHeight() / 4;
+            elementInfoPoint.x = getWidth() - getWidth() / 4;
+            elementInfoPoint.y = getHeight() - getHeight() / 4;
             float angle = 270 - ANGLE_SECTOR;
-            for (SectorElement aSectorArray : sectorArray) {
-                aSectorArray.setPath(angle, ANGLE_SECTOR, getHeight(), sectorCenter);
+            for (ControlElement aSectorArray : elementArray) {
+                aSectorArray.setPath(angle, ANGLE_SECTOR, getHeight(), elementCenter);
                 angle = angle - ANGLE_SECTOR - ANGLE_MARGIN;
             }
         } else {
-           throw new AssertionError("unsupported direction!");
+           throw new InvalidParameterException("unsupported direction!");
         }
     }
 
@@ -133,13 +130,13 @@ public class ControlView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        for (SectorElement element : sectorArray) {
-            element.draw(canvas, sectorPaint);
+        for (ControlElement element : elementArray) {
+            element.draw(canvas, elementPaint);
         }
 
-        float infoWidth = infoPaint.measureText(sectorInfo);
-        canvas.drawText(sectorInfo, sectorInfoPoint.x - infoWidth / 2,
-                sectorInfoPoint.y + SIZE_TEXT_DEFAULT / 2, infoPaint);
+        float infoWidth = elementInfoPaint.measureText(elementInfo);
+        canvas.drawText(elementInfo, elementInfoPoint.x - infoWidth / 2,
+                elementInfoPoint.y + SIZE_TEXT_DEFAULT / 2, elementInfoPaint);
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -163,14 +160,14 @@ public class ControlView extends View {
     }
 
     private boolean touchStart(MotionEvent event) {
-        int posMiddle = sectorArray.length / 2;
+        int posMiddle = elementArray.length / 2;
         boolean accept = false;
         for (int i = 0; i <= posMiddle; ++i) {
-            SectorElement element = sectorArray[i];
+            ControlElement element = elementArray[i];
             if (element.accept(event.getX(), event.getY()) || accept) {
                 // 触点所在的扇区变化时重绘视图。
-                if (i != sectorIndex && !accept) {
-                    sectorIndex = i;
+                if (i != elementIndex && !accept) {
+                    elementIndex = i;
                     calcSectorInfo();
                     invalidate();
                 }
@@ -182,13 +179,13 @@ public class ControlView extends View {
         }
         if (!accept) {
             // 触点不在上半部分，在下半部分查找。
-            for (int i = sectorArray.length - 1; i >= posMiddle; --i) {
-                SectorElement element = sectorArray[i];
+            for (int i = elementArray.length - 1; i >= posMiddle; --i) {
+                ControlElement element = elementArray[i];
                 if (element.accept(event.getX(), event.getY()) || accept) {
                     element.mark(true);
                     // 触点所在的扇区变化时重绘视图。
-                    if (i != sectorIndex && !accept) {
-                        sectorIndex = i;
+                    if (i != elementIndex && !accept) {
+                        elementIndex = i;
                         calcSectorInfo();
                         invalidate();
                     }
@@ -199,11 +196,11 @@ public class ControlView extends View {
             }
         } else {
             // 触点在上半部分，将下半部分标记为空闲状态。
-            // for (int i = sectorArray.length - 1; i > posMiddle; --i) {
-            //     sectorArray[i].mark(false);
+            // for (int i = elementArray.length - 1; i > posMiddle; --i) {
+            //     elementArray[i].mark(false);
             // }
             // 实际仅需要重新标记下半部分第一个扇区。
-            sectorArray[posMiddle + 1].mark(false);
+            elementArray[posMiddle + 1].mark(false);
         }
         return true;
     }
@@ -214,20 +211,20 @@ public class ControlView extends View {
     }
 
     private void initSectorState() {
-        for (SectorElement element : sectorArray) {
+        for (ControlElement element : elementArray) {
             element.mark(false);
         }
-        sectorIndex = sectorArray.length / 2;
-        sectorArray[sectorIndex].mark(true);
+        elementIndex = elementArray.length / 2;
+        elementArray[elementIndex].mark(true);
     }
 
     private void calcSectorInfo() {
-        int middle = sectorArray.length / 2;
-        int level = Math.abs(middle - sectorIndex);
+        int middle = elementArray.length / 2;
+        int level = Math.abs(middle - elementIndex);
         int ratio = (int) ((float) level / middle * 100);
-        sectorInfo = ratio + "%";
+        elementInfo = ratio + "%";
         if (progressListener != null) {
-            progressListener.onChange((float) sectorIndex / NUM_SECTOR);
+            progressListener.onChange((float) elementIndex / NUM_SECTOR);
         }
     }
 

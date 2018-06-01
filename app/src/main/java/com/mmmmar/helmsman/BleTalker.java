@@ -14,26 +14,28 @@ public class BleTalker {
 
     private static final String TAG = "BleTalker";
 
-    private final static UUID UUID_SERVICE = UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb");
-    private final static UUID UUID_CHARACTERISTIC = UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb");
-
     private final Queue<byte[]> dataQueue = new LinkedList<>();
+    private final UUID serviceUUID;
+    private final UUID characteristicUUID;
+
     private boolean dataWriting = false;
 
-    public static boolean isServiceAccept(BluetoothGatt gatt) {
-        BluetoothGattService service = gatt.getService(UUID_SERVICE);
+    public BleTalker(String uuidService, String uuidCharacteristic) {
+        serviceUUID = UUID.fromString(uuidService);
+        characteristicUUID = UUID.fromString(uuidCharacteristic);
+    }
+
+    public boolean isValid(BluetoothGatt gatt) {
+        BluetoothGattService service = gatt.getService(serviceUUID);
         if (service == null) return false;
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID_CHARACTERISTIC);
+        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUUID);
         return characteristic != null;
     }
 
     public void send(BluetoothGatt gatt, byte[] data) {
         Log.d(TAG, "data: " + Arrays.toString(data));
         BluetoothGattCharacteristic characteristic = getCharacteristic(gatt);
-        if (characteristic == null) {
-            Log.e(TAG, "send: can't find characteristic");
-            return;
-        }
+        assert characteristic != null;
         if (dataWriting) {
             dataQueue.add(data);
         } else {
@@ -44,14 +46,11 @@ public class BleTalker {
     }
 
     public void next(BluetoothGatt gatt) {
+        BluetoothGattCharacteristic characteristic = getCharacteristic(gatt);
+        assert characteristic != null;
         byte[] data = dataQueue.poll();
         if (data == null) {
             dataWriting = false;
-            return;
-        }
-        BluetoothGattCharacteristic characteristic = getCharacteristic(gatt);
-        if (characteristic == null) {
-            Log.e(TAG, "send: can't find characteristic");
             return;
         }
         characteristic.setValue(data);
@@ -59,8 +58,8 @@ public class BleTalker {
     }
 
     private BluetoothGattCharacteristic getCharacteristic(BluetoothGatt gatt) {
-        BluetoothGattService service = gatt.getService(UUID_SERVICE);
+        BluetoothGattService service = gatt.getService(serviceUUID);
         if (service == null) return null;
-        return service.getCharacteristic(UUID_CHARACTERISTIC);
+        return service.getCharacteristic(characteristicUUID);
     }
 }

@@ -6,7 +6,7 @@ import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.RectF;
 
-public class SectorElement {
+public class ControlElement {
 
     private static final int RADIUS_INNER_SEC = 10;
     private static final int RADIUS_OUTER_SEC = 120;
@@ -27,7 +27,7 @@ public class SectorElement {
     private float endAngle;
     private boolean toggle;
 
-    public SectorElement(int colorDark, int colorLight) {
+    public ControlElement(int colorDark, int colorLight) {
         this.colorDark = colorDark;
         this.colorLight = colorLight;
     }
@@ -84,7 +84,7 @@ public class SectorElement {
 
     @Override
     public String toString() {
-        return "SectorElement{" +
+        return "ControlElement{" +
                 "centerPoint=" + centerPoint +
                 ", radius=" + radius +
                 ", startAngle=" + startAngle +

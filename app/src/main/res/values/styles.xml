@@ -6,8 +6,4 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="DeviceDialogTheme" parent="Base.Theme.AppCompat.Light.Dialog.Alert">
-
-    </style>
-
 </resources>

@@ -24,7 +24,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String BUNDLE_LOG1 = "log1";
     private static final String BUNDLE_LOG2 = "log2";
-    private static final String BUNDLE_STATE = "state";
 
     private static final int TIME_STATE_LOG_ANIMATION = 250;
     private static final int REQUEST_ENABLE_BT = 1;
@@ -39,19 +38,21 @@ public class MainActivity extends AppCompatActivity {
 
     private DeviceDialog deviceDialog;
 
-    private BleService.Op bleOp;
+    private BleService.Impl bleImpl;
     private ServiceConnection bleServiceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            bleOp = (BleService.Op) service;
-            bleOp.setStateListener(new BleStateListener());
-            toyLogic.setCommandConsumer(bleOp::send);
+            bleImpl = (BleService.Impl) service;
+            // 根据Service状态切换按钮状态。
+            switchDeviceBtn(bleImpl.getState());
+            bleImpl.setBleListener(new BleBleListener());
+            deviceController.setCommandConsumer(bleImpl::send);
         }
         @Override
         public void onServiceDisconnected(ComponentName name) {}
     };
 
-    private ToyLogic toyLogic = new ToyLogic();
+    private DeviceController deviceController = new DeviceController();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,13 +72,13 @@ public class MainActivity extends AppCompatActivity {
 
         ControlView cl_left = findViewById(R.id.ctl_left);
         ControlView cl_right = findViewById(R.id.ctl_right);
-        cl_left.setProgressListener(toyLogic::handleLeft);
-        cl_right.setProgressListener(toyLogic::handleRight);
+        cl_left.setProgressListener(deviceController::handleLeft);
+        cl_right.setProgressListener(deviceController::handleRight);
 
         if (savedInstanceState  != null) {
+            // 恢复日志状态。
             tv_log1.setText(savedInstanceState.getString(BUNDLE_LOG1));
             tv_log2.setText(savedInstanceState.getString(BUNDLE_LOG2));
-            switchDeviceBtn(savedInstanceState.getInt(BUNDLE_STATE));
         }
 
         Intent intent = new Intent(this, BleService.class);
@@ -96,19 +97,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        int serviceState;
-        // 在开发时出现空指针情况，是Instant Run的问题？
-        if (bleOp == null) {
-            serviceState = BleService.STATE_UNCONNECTED;
-        } else {
-            serviceState = bleOp.getState();
-        }
-        Log.d(TAG, "save instance, log1 : " + tv_log1.getText().toString()
-                + ", log2 : " + tv_log2.getText().toString()
-                + ", state : " + serviceState);
+        Log.d(TAG, "save instance"
+                + ", log1 : " + tv_log1.getText().toString()
+                + ", log2 : " + tv_log2.getText().toString());
+        // 保存日志状态。
         outState.putString(BUNDLE_LOG1, tv_log1.getText().toString());
         outState.putString(BUNDLE_LOG2, tv_log2.getText().toString());
-        outState.putInt(BUNDLE_STATE, serviceState);
     }
 
     @Override
@@ -136,11 +130,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onDeviceDisconnectClick(View view) {
-        bleOp.disconnect();
+        bleImpl.disconnect();
     }
 
     private void onSettingButtonClick(View view) {
-
+        Intent intent = new Intent();
+        intent.setClass(this, SettingActivity.class);
+        startActivity(intent);
     }
 
     private void showDeviceDialog() {
@@ -149,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void onDeviceChoose(BluetoothDevice device) {
-        bleOp.connect(device);
+        bleImpl.connect(device);
     }
 
     private Drawable createBtnDrawable() {
@@ -213,7 +209,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private class BleStateListener implements BleService.StateListener {
+    private class BleBleListener implements BleService.BleListener {
 
         @Override
         public void onServerConnect() {
@@ -235,12 +231,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onServerError(String msg) {
-
-        }
-
-        @Override
-        public void onServerReply(byte[] data) {
-
+            showStateLog(msg);
         }
     }
 }
