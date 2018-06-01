@@ -2,6 +2,9 @@ package com.mmmmar.helmsman;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.UUID;
+
 import static org.junit.Assert.*;
 
 /**
@@ -12,6 +15,9 @@ import static org.junit.Assert.*;
 public class ExampleUnitTest {
     @Test
     public void addition_isCorrect() {
-        assertEquals(4, 2 + 2);
+        String uuid = "0000ffe0–0000–1000–8000–00805f9b34fb";
+        String[] parts = uuid.split("–");
+        System.out.println(Arrays.toString(parts));
+        assertEquals(parts.length, 5);
     }
 }

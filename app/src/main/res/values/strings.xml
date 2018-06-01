@@ -13,9 +13,8 @@
     <string name="msg_disconnect">断开连接失败</string>
     <string name="err_device_irrelevant">设备服务不匹配！</string>
 
-    <!-- replace '-' with "&#8211;" -->
-    <string name="uuid_service">0000ffe0&#8211;0000&#8211;1000&#8211;8000&#8211;00805f9b34fb</string>
-    <string name="uuid_characteristic">0000ffe1&#8211;0000&#8211;1000&#8211;8000&#8211;00805f9b34fb</string>
+    <string name="uuid_service">0000ffe0-0000-1000-8000-00805f9b34fb</string>
+    <string name="uuid_characteristic">0000ffe1-0000-1000-8000-00805f9b34fb</string>
     <string name="pf_key_service">edit_service</string>
     <string name="pf_key_characteristic">edit_characteristic</string>
 
