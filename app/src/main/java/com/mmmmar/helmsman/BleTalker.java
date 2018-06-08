@@ -15,17 +15,21 @@ public class BleTalker {
     private static final String TAG = "BleTalker";
 
     private final Queue<byte[]> dataQueue = new LinkedList<>();
-    private final UUID serviceUUID;
-    private final UUID characteristicUUID;
+    private UUID serviceUUID;
+    private UUID characteristicUUID;
 
     private boolean dataWriting = false;
 
     public BleTalker(String uuidService, String uuidCharacteristic) {
-        serviceUUID = UUID.fromString(uuidService);
-        characteristicUUID = UUID.fromString(uuidCharacteristic);
+        init(uuidService, uuidCharacteristic);
     }
 
-    public boolean isValid(BluetoothGatt gatt) {
+    public void reset(String uuidService, String uuidCharacteristic) {
+        dataQueue.clear();
+        init(uuidService, uuidCharacteristic);
+    }
+
+    public boolean valid(BluetoothGatt gatt) {
         BluetoothGattService service = gatt.getService(serviceUUID);
         if (service == null) return false;
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicUUID);
@@ -61,5 +65,10 @@ public class BleTalker {
         BluetoothGattService service = gatt.getService(serviceUUID);
         if (service == null) return null;
         return service.getCharacteristic(characteristicUUID);
+    }
+
+    private void init(String uuidService, String uuidCharacteristic) {
+        serviceUUID = UUID.fromString(uuidService);
+        characteristicUUID = UUID.fromString(uuidCharacteristic);
     }
 }

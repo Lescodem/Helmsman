@@ -32,6 +32,14 @@ public class BleService extends Service {
     private BleTalker bleTalker;
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+        String service = getString(R.string.uuid_service);
+        String characteristic = getString(R.string.uuid_characteristic);
+        bleTalker = new BleTalker(service, characteristic);
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
         return impl;
     }
@@ -80,7 +88,7 @@ public class BleService extends Service {
 
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            // TODO: 2018/6/1 对status参数不了解，暂时不使用。
+            // TODO: 2018/6/1 不清楚参数status，暂不使用。
             if (newState == BluetoothGatt.STATE_CONNECTED) {
                 gatt.discoverServices();
             } else if (newState == BluetoothGatt.STATE_DISCONNECTED) {
@@ -92,8 +100,9 @@ public class BleService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             // ignore "status".
-            bleTalker = createBleTalker();
-            if (bleTalker.isValid(gatt)) {
+            SettingManager manager = SettingManager.getInstance(BleService.this);
+            bleTalker.reset(manager.getServiceValue(), manager.getCharacteristicValue());
+            if (bleTalker.valid(gatt)) {
                 serviceState = STATE_CONNECTED;
                 impl.bleListener.onServerConnect();
             } else {
@@ -107,10 +116,5 @@ public class BleService extends Service {
             // ignore "status".
             bleTalker.next(gatt);
         }
-    }
-
-    private BleTalker createBleTalker() {
-        SettingManager manager = SettingManager.getInstance(this);
-        return new BleTalker(manager.getServiceValue(), manager.getCharacteristicValue());
     }
 }
